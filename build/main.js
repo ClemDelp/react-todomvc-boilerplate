@@ -3,24 +3,31 @@
 var React = require('react');
 var ReactDOM = require('react-dom');
 
-var App = React.createClass({displayName: "App",
-	render: function() {
-		return (
-			React.createElement("div", null, 
-				React.createElement(TodoHeader, null), 
-				React.createElement(TodoMain, null), 
-				React.createElement(TodoFooter, null)
-			)
-		);
-	}	
-});
-
 var TodoHeader = React.createClass({displayName: "TodoHeader",
+	
+	add : function(event){
+		event.preventDefault();
+		this.props.add(this.state.val);
+		this.setState({val : ""});
+
+		return false;
+	},
+
+	getInitialState : function(){
+		return ({val : ''});
+	},
+
+	handleChange : function(event){
+		this.setState({val : event.target.value});
+	},	
+
 	render : function(){
 		return (
 			React.createElement("header", {className: "header"}, 
 				React.createElement("h1", null, "todos"), 
-				React.createElement("input", {className: "new-todo", placeholder: "What needs to be done?", autofocus: true})
+				React.createElement("form", {onSubmit: this.add}, 
+				React.createElement("input", {value: this.state.val, onChange: this.handleChange, className: "new-todo", placeholder: "What needs to be done?", autofocus: true})
+				)
 			)
 		);
 	}
@@ -31,7 +38,7 @@ var TodoFooter = React.createClass({displayName: "TodoFooter",
 	render: function() {
 		return (
 			React.createElement("footer", {className: "footer"}, 
-				React.createElement("span", {className: "todo-count"}, React.createElement("strong", null, "0"), " item left"), 
+				React.createElement("span", {className: "todo-count"}, React.createElement("strong", null, this.props.nb_left), " item left"), 
 				React.createElement("ul", {className: "filters"}, 
 					React.createElement("li", null, 
 						React.createElement("a", {className: "selected", href: "#/"}, "All")
@@ -49,37 +56,86 @@ var TodoFooter = React.createClass({displayName: "TodoFooter",
 	}
 });
 
-var TodoMain = React.createClass({displayName: "TodoMain",
-	render: function() {
+var TodoItem = React.createClass({displayName: "TodoItem",
+	
+	delete : function(){
+		this.props.delete(this.props.id)
+	},
+
+	toggle : function(){
+		this.props.toggle(this.props.id)
+	},
+
+	render : function(){
+		var classStr = '';
+		if(this.props.todo.completed == true) classStr = 'completed';
+		
 		return (
-			React.createElement("section", {className: "main"}, 
-				React.createElement("input", {className: "toggle-all", type: "checkbox"}), 
-				React.createElement("label", {htmlFor: "toggle-all"}, "Mark all as complete"), 
-				React.createElement("ul", {className: "todo-list"}, 
-					React.createElement("li", {className: "completed"}, 
-						React.createElement("div", {className: "view"}, 
-							React.createElement("input", {className: "toggle", type: "checkbox"}), 
-							React.createElement("label", null, "Taste JavaScript"), 
-							React.createElement("button", {className: "destroy"})
-						)
-						
-					), 
-					React.createElement("li", null, 
-						React.createElement("div", {className: "view"}, 
-							React.createElement("input", {className: "toggle", type: "checkbox"}), 
-							React.createElement("label", null, "Buy a unicorn"), 
-							React.createElement("button", {className: "destroy"})
-						)
-						
-					)
+			React.createElement("li", {className: classStr}, 
+				React.createElement("div", {className: "view"}, 
+					React.createElement("input", {onClick: this.toggle, className: "toggle", type: "checkbox", ckecked: this.props.todo.completed}), 
+					React.createElement("label", null, this.props.todo.name), 
+					React.createElement("button", {onClick: this.delete, className: "destroy"})
 				)
+				
+			)
+		);
+	}
+})
+
+var TodoMain = React.createClass({displayName: "TodoMain",
+
+	addItem : function(val){
+		this.state.todos.push({name:val,completed:false});
+		this.setState({todos : this.state.todos});
+	},
+
+	deleteItem : function(key){
+		this.state.todos.splice(key,1);
+		this.setState({todos : this.state.todos})
+	},
+	
+	toggleItem : function(key){
+		this.state.todos[key].completed = !this.state.todos[key].completed;
+		this.setState({todos : this.state.todos})
+	},
+
+	getInitialState : function(){
+		return {
+			todos : [
+				{name : "Design the application", completed : false},
+				{name : "Push to git repo", completed : false}
+			]
+		}
+	},
+
+	render: function() {
+		var that = this;
+		console.log(this.state.todos)
+
+		var rows = this.state.todos.map(function(todo,i){
+
+			return React.createElement(TodoItem, {toggle: that.toggleItem, delete: that.deleteItem, todo: todo, id: i})
+		});
+
+		var nb_left = this.state.todos.filter(function(elem){return !elem.completed;}).length;
+		return (
+			React.createElement("div", null, 
+				React.createElement(TodoHeader, {add: that.addItem}), 
+				React.createElement("section", {className: "main"}, 
+					React.createElement("input", {className: "toggle-all", type: "checkbox"}), 
+					React.createElement("label", {htmlFor: "toggle-all"}, "Mark all as complete"), 
+					React.createElement("ul", {className: "todo-list"}, 
+						rows
+					)
+				), 
+				React.createElement(TodoFooter, {nb_left: nb_left})
 			)
 		);
 	}
 });
 
-
-ReactDOM.render(React.createElement(App, null), document.getElementById('tutu'));
+ReactDOM.render(React.createElement(TodoMain, null), document.getElementById('todo_main_container'));
 
 },{"react":159,"react-dom":30}],2:[function(require,module,exports){
 (function (process){
